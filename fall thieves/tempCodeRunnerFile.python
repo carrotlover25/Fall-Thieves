@@ -1,0 +1,102 @@
+import pygame
+import pandas as pd
+import random
+import sys
+
+# Inicializar Pygame
+pygame.init()
+
+# Configuración de la ventana de Pygame
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption("Trivia Game")
+
+# Cargar los datos desde el archivo Excel
+file_path = "C:/Users/mfrey/OneDrive/Pictures/fall thieves/PREGUNTASYRESP.xlsx"
+data = pd.read_excel(file_path)
+data = data.astype(str)
+
+# Colores
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+
+# Fuentes
+font = pygame.font.Font(None, 40)
+button_font = pygame.font.Font(None, 36)
+
+# Variables del juego
+question_index = 0
+correct_answers = 0
+options = []
+answer_buttons = []
+
+# Función para mostrar el mensaje de fin de juego
+def show_game_over_message():
+    message_text = font.render(f"Game Over! You answered {correct_answers} correctly.", True, WHITE)
+    screen.blit(message_text, (200, 250))
+
+# Función para mostrar la pregunta y opciones
+def show_question():
+    global options, answer_buttons
+    
+    if question_index < len(data):
+        # Obtener las opciones mezcladas
+        options = [data['correct answer'][question_index], data['R1'][question_index], 
+                   data['R2'][question_index]]
+        # random.shuffle(options)
+
+        # Dibujar la pregunta
+        question_text = font.render(data['Questions'][question_index], True, WHITE)
+        screen.blit(question_text, (100, 100))
+
+        # Dibujar las opciones de respuesta
+        answer_buttons.clear()
+        for i, option in enumerate(options):
+            button_rect = pygame.Rect(100, 200 + (i * 60), 600, 50)
+            pygame.draw.rect(screen, GREEN, button_rect)
+            answer_button_text = button_font.render(option, True, BLACK)
+            screen.blit(answer_button_text, (button_rect.x + 20, button_rect.y + 10))
+            answer_buttons.append((button_rect, option))
+    else:
+        show_game_over_message()
+
+# Función para manejar la respuesta
+def handle_answer(selected_answer):
+    global correct_answers, question_index
+    if selected_answer == data['correct answer'][question_index]:
+        correct_answers += 1
+    question_index += 1
+
+# Función principal del juego
+def game_loop():
+    global question_index, correct_answers
+    
+    running = True
+    while running:
+        screen.fill(BLACK)  # Limpiar la pantalla solo una vez por ciclo
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if question_index < len(data):
+                    # Verificar si se hace clic en las opciones
+                    for button_rect, option in answer_buttons:
+                        if button_rect.collidepoint(event.pos):
+                            handle_answer(option)
+                            break
+                else:
+                    # Si el juego ha terminado, salir
+                    running = False
+
+        show_question()  # Mostrar la pregunta y las opciones
+
+        pygame.display.flip()  # Usar flip en lugar de update
+
+        # Limitar los FPS
+        pygame.time.Clock().tick(60)
+
+# Ejecutar el ciclo del juego
+game_loop()
